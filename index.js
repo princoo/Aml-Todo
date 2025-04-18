@@ -6,7 +6,7 @@ let data = [
     description:
       "Lorem ipsum dolor sit amet consectetur adipisicing elit. Rerum, repellendus.",
     completed: true,
-    dueDate: "10/10/2024",
+    dueDate: "12/10/2020",
   },
   {
     userId: 1,
@@ -15,7 +15,7 @@ let data = [
     description:
       "Lorem ipsum dolor sit amet consectetur adipisicing elit. Rerum, repellendus.",
     completed: false,
-    dueDate: "10/10/2024",
+    dueDate: "10/03/2020",
   },
   {
     userId: 1,
@@ -24,25 +24,76 @@ let data = [
     description:
       "Lorem ipsum dolor sit amet consectetur adipisicing elit. Rerum, repellendus.",
     completed: false,
-    dueDate: "10/10/2024",
+    dueDate: "10/10/2023",
   },
 ];
 const form = document.querySelector("form");
+const addTodoBtn = document.querySelector("#addTodoBtn");
+const formContainer = document.querySelector("#formContainer");
+const closeFormBtn = document.querySelector("#closeFormBtn");
+const filterDropdown = document.querySelector("#filterDropdown");
+const sortDiv = document.querySelector("#sort");
+const ascIcon = document.querySelector("#ascIcon");
+const descIcon = document.querySelector("#descIcon");
+
+closeFormBtn.addEventListener("click", () => {
+  formContainer.classList.add("hidden");
+});
+
+addTodoBtn.addEventListener("click", () => {
+  formContainer.classList.remove("hidden");
+});
+
+filterDropdown.addEventListener("change", (e) => {
+  const value = e.target.value;
+  if (value === "all") displayAllData(data);
+
+  if (value === "completed") filterCompleted();
+
+  if (value === "incomplete") filterUncompleted();
+});
+
 form.addEventListener("submit", (e) => {
   e.preventDefault();
   const title = e.target.title.value;
   const date = e.target.date.value;
   const description = e.target.desc.value;
-  console.log(title, date, description);
   createTodo(title, date, description);
   displayAllData(data);
   form.reset();
-})
-function displayAllData(data) {
+  formContainer.classList.add("hidden");
+});
+
+
+sortDiv.addEventListener("click", () => {
+  ascIcon.classList.toggle("hidden");
+  descIcon.classList.toggle("hidden");
+  const sortedItems = sort();
+  displayAllData(sortedItems);
+});
+
+function sort (items = data){
+  const isAscending = ascIcon.classList.contains("hidden");
+  if (!isAscending) {
+    items = sortByDateAsc(items);
+  } else {
+    items = sortByDateDesc(items);
+  }
+  return items;
+}
+function displayAllData(todos = data) {
   const parentDiv = document.querySelector("#todoContainer");
   parentDiv.innerHTML = "";
+  if (todos.length === 0) {
+    const emptyDiv = document.createElement("div");
+    emptyDiv.className = "text-center text-gray-500";
+    emptyDiv.textContent = "Empty List";
+    parentDiv.appendChild(emptyDiv);
+    return;
+  }
+  todos = sort(todos);
   const fragmentDiv = document.createDocumentFragment();
-  for (const task of data) {
+  for (const task of todos) {
     const itemDiv = document.createElement("div");
     const contentDiv = document.createElement("div");
     const actionDiv = document.createElement("div");
@@ -55,7 +106,7 @@ function displayAllData(data) {
     checkBox.type = "checkbox";
     checkBox.checked = task.completed;
 
-    itemDiv.className = `p-3 rounded-lg border-2 flex items-start gap-4 transition-all duration-500 ease-in-out ${
+    itemDiv.className = `p-3 rounded-lg border-2 flex items-start justify-between gap-4 transition-all duration-500 ease-in-out ${
       task.completed ? "bg-green-200" : "bg-white"
     }`;
     tasktitle.className = "font-medium capitalize";
@@ -69,19 +120,21 @@ function displayAllData(data) {
     tasktitle.textContent = task.title;
     dueDate.textContent = task.dueDate;
     desc.textContent = task.description;
+    contentDiv.className = "flex-1";
 
-    deleteBtn.addEventListener("click", () => { 
+    deleteBtn.addEventListener("click", () => {
       deleteTodo(task.id);
     });
     checkBox.addEventListener("change", () => {
       markComplete(task.id);
-    })
+    });
     actionDiv.append(editBtn);
     actionDiv.append(deleteBtn);
+    contentDiv.append(checkBox);
     contentDiv.appendChild(tasktitle);
     contentDiv.appendChild(dueDate);
     contentDiv.appendChild(desc);
-    itemDiv.append(checkBox);
+    // itemDiv.append(checkBox);
     itemDiv.appendChild(contentDiv);
     if (!task.completed) {
       itemDiv.appendChild(actionDiv);
@@ -108,14 +161,14 @@ function deleteTodo(id) {
 
   if (index !== -1) {
     data.splice(index, 1);
-    displayAllData(data)
+    displayAllData(data);
   }
 }
 function singleTodo(id) {
   const todo = data.find((todo) => todo.id === id);
 }
 
-function createTodo(title, date, description, completed = false,userId=1) {
+function createTodo(title, date, description, completed = false, userId = 1) {
   const todo = {
     userId,
     id: data.length + 1,
@@ -130,22 +183,27 @@ function createTodo(title, date, description, completed = false,userId=1) {
 function markComplete(id) {
   data = data.map((todo) => {
     if (todo.id === id) {
-       todo.completed = !todo.completed;
+      todo.completed = !todo.completed;
     }
-    return todo
+    return todo;
   });
-  displayAllData(data);
+  const event = new Event("change");
+  filterDropdown.dispatchEvent(event);
+  // displayAllData(data);
 }
 
-function sortByDate() {
-  data.sort((a, b) => new Date(a.date) - new Date(b.date));
+function sortByDateAsc(items) {
+  return items.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+}
+function sortByDateDesc(items) {
+  return items.sort((a, b) => new Date(b.dueDate) - new Date(a.dueDate));
 }
 
 function filterCompleted() {
-  data.filter((todo) => todo.completed);
+  const completed = data.filter((todo) => todo.completed);
+  displayAllData(completed);
 }
 function filterUncompleted() {
-  data.filter((todo) => !todo.completed);
+  const unCompleted = data.filter((todo) => !todo.completed);
+  displayAllData(unCompleted);
 }
-
-
